@@ -1,26 +1,22 @@
-import React, {
-  useState,
-  useEffect,
-  useRef,
-  useCallback
-} from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   ModuleRegistry,
-  AllCommunityModule
+  AllCommunityModule,
+  type ColDef,
 } from 'ag-grid-community';
+import { AgGridReact } from 'ag-grid-react';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
 
 import {
-  DataSourceModal,
-  StatisticsPanel,
-  WorkspaceListModal,
   WorkspaceLanding,
+  WorkspaceListModal,
   CreateWorkspaceForm,
-  DataGridView
+  DataGridView,
+  DataSourceModal,       
+  type ConnectionDetails,
 } from './components/ui/UI';
-import { generateMockData } from './utils/api';
-import type { DataRow } from './utils/api';
+import { generateMockData, type DataRow } from './utils/api';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -28,7 +24,16 @@ const App: React.FC = () => {
   type Workspace = {
     id: string;
     name: string;
-    filters: any;
+    filters: {
+      ageRange?: string;
+      gender?: string;
+      startYear?: string;
+      endYear?: string;
+      condition?: string;
+      conditionCodeType?: string;
+      treatment?: string;
+      treatmentCodeType?: string;
+    };
     createdAt: string;
   };
 
@@ -61,7 +66,7 @@ const App: React.FC = () => {
     treatmentCodes: ''
   });
 
-  const gridRef = useRef<any>(null);
+  const gridRef = useRef<AgGridReact<DataRow> | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem('researchWorkspaces');
@@ -101,7 +106,7 @@ const App: React.FC = () => {
         filtered = filtered.filter((r) =>
           r.diagnosis
             .toLowerCase()
-            .includes(f.condition.toLowerCase())
+            .includes(f.condition?.toLowerCase() || '')
         );
       }
       if (f.startYear && f.endYear) {
@@ -123,16 +128,20 @@ const App: React.FC = () => {
     }
   }, [activeWorkspace, rowData]);
 
-  const columnDefs = [
+  const columnDefs: ColDef<DataRow>[] = [
     {
-      field: 'checkbox',
-      headerName: '',
+      field: 'id',
+      headerName: 'ID',
+      editable: true,
       checkboxSelection: true,
       headerCheckboxSelection: true,
-      width: 50,
       pinned: 'left'
     },
-    { field: 'mrn', headerName: 'MRN', editable: true },
+    {
+      field: 'mrn',
+      headerName: 'MRN',
+      editable: true
+    },
     {
       field: 'age',
       headerName: 'Age',
@@ -192,7 +201,7 @@ const App: React.FC = () => {
     }
   ];
 
-  const defaultColDef = {
+  const defaultColDef: ColDef<DataRow> = {
     flex: 1,
     sortable: true,
     filter: true,
@@ -200,7 +209,7 @@ const App: React.FC = () => {
     minWidth: 100
   };
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -236,12 +245,20 @@ const App: React.FC = () => {
     setRowData(generateMockData(100));
   };
 
-  const handleConnectDataSource = (
-    source: string,
-    details: any
-  ) => {
-    setRowData((prev) => [...prev, ...generateMockData(50)]);
-  };
+  const [connectedSources, setConnectedSources] = useState<
+  { name: string; details: ConnectionDetails }[]
+>([]);
+
+
+
+const handleConnectDataSource = (
+  source: string,
+  details: ConnectionDetails
+) => {
+  setConnectedSources(prev => [...prev, { name: source, details }]);
+
+  setRowData(prev => [...prev, ...generateMockData(50)]);
+};
 
   const handleLoadWorkspace = (ws: Workspace) => {
     setActiveWorkspace(ws);
@@ -269,7 +286,7 @@ const App: React.FC = () => {
   };
 
   const handleAddRow = () => {
-    const newRow: any = {
+    const newRow: DataRow = {
       id: `P${String(rowData.length + 1).padStart(3, '0')}`,
       mrn: `MRN${String(rowData.length + 1).padStart(3, '0')}`,
       age: 30,
@@ -319,7 +336,7 @@ const App: React.FC = () => {
   const onSelectionChanged = useCallback(() => {
     if (gridRef.current?.api) {
       const sel = gridRef.current.api.getSelectedNodes();
-      setSelectedRows(sel.map((n: any) => n.data));
+      setSelectedRows(sel.map((n) => n.data as DataRow));
     }
   }, []);
 
@@ -343,23 +360,31 @@ const App: React.FC = () => {
   }
   if (currentView === 'datagrid' && activeWorkspace) {
     return (
-      <DataGridView
-        activeWorkspace={activeWorkspace}
-        filteredData={filteredData}
-        showStats={showStats}
-        setShowStats={setShowStats}
-        setShowDataSourceModal={setShowDataSourceModal}
-        handleBackToLanding={handleBackToLanding}
-        handleAddRow={handleAddRow}
-        handleDeleteRows={handleDeleteRows}
-        handleSaveWorkspace={handleSaveWorkspace}
-        handleExportExcel={handleExportExcel}
-        handleExportCSV={handleExportCSV}
-        onSelectionChanged={onSelectionChanged}
-        gridRef={gridRef}
-        columnDefs={columnDefs}
-        defaultColDef={defaultColDef}
-      />
+      <>
+        <DataGridView
+          activeWorkspace={activeWorkspace}
+          filteredData={filteredData}
+          showStats={showStats}
+          setShowStats={setShowStats}
+          setShowDataSourceModal={setShowDataSourceModal}   
+          handleBackToLanding={handleBackToLanding}
+          handleAddRow={handleAddRow}
+          handleDeleteRows={handleDeleteRows}
+          handleSaveWorkspace={handleSaveWorkspace}
+          handleExportExcel={handleExportExcel}
+          handleExportCSV={handleExportCSV}
+          onSelectionChanged={onSelectionChanged}
+          gridRef={gridRef}
+          columnDefs={columnDefs}
+          defaultColDef={defaultColDef}
+        />
+  
+        <DataSourceModal
+          isOpen={showDataSourceModal}
+          onClose={() => setShowDataSourceModal(false)}
+          onConnect={handleConnectDataSource}
+        />
+      </>
     );
   }
 

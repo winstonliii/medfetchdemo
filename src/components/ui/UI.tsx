@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { AgGridReact } from 'ag-grid-react';
+import type { ColDef, ColGroupDef } from 'ag-grid-community';
 import {
   Database,
   Globe,
@@ -23,9 +24,22 @@ import {
   Tooltip
 } from 'recharts';
 
-export const DataSourceModal = ({ isOpen, onClose, onConnect }: any) => {
+export interface ConnectionDetails {
+  fhirUrl: string;
+  apiEndpoint: string;
+  apiKey: string;
+  csvFile: File | null;
+}
+
+interface DataSourceModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConnect: (source: string, details: ConnectionDetails) => void;
+}
+
+export const DataSourceModal = ({ isOpen, onClose, onConnect }: DataSourceModalProps) => {
   const [selectedSource, setSelectedSource] = useState('');
-  const [connectionDetails, setConnectionDetails] = useState({
+  const [connectionDetails, setConnectionDetails] = useState<ConnectionDetails>({
     fhirUrl: '',
     apiEndpoint: '',
     apiKey: '',
@@ -161,30 +175,48 @@ export const DataSourceModal = ({ isOpen, onClose, onConnect }: any) => {
   );
 };
 
-export const StatisticsPanel = ({ data }: any) => {
+interface DataRow {
+  id: string;
+  mrn: string;
+  age: number;
+  gender: string;
+  diagnosis: string;
+  treatment: string;
+  encounterDate: string;
+  labValue: number;
+  systolicBP: number;
+  diastolicBP: number;
+  bmi: string;
+}
+
+interface StatisticsPanelProps {
+  data: DataRow[];
+}
+
+export const StatisticsPanel = ({ data }: StatisticsPanelProps) => {
   const stats = useMemo(() => {
     if (!data || data.length === 0) return null;
     const ageStats = {
-      min: Math.min(...data.map((d: any) => d.age)),
-      max: Math.max(...data.map((d: any) => d.age)),
-      avg: (data.reduce((sum: any, d: any) => sum + d.age, 0) / data.length).toFixed(1)
+      min: Math.min(...data.map((d) => d.age)),
+      max: Math.max(...data.map((d) => d.age)),
+      avg: (data.reduce((sum, d) => sum + d.age, 0) / data.length).toFixed(1)
     };
-    const genderDistribution = data.reduce((acc: any, d: any) => {
+    const genderDistribution = data.reduce((acc: Record<string, number>, d) => {
       acc[d.gender] = (acc[d.gender] || 0) + 1;
       return acc;
     }, {});
-    const conditionDistribution = data.reduce((acc: any, d: any) => {
+    const conditionDistribution = data.reduce((acc: Record<string, number>, d) => {
       acc[d.diagnosis] = (acc[d.diagnosis] || 0) + 1;
       return acc;
     }, {});
     const avgBMI = (
-      data.reduce((sum: any, d: any) => sum + parseFloat(d.bmi), 0) / data.length
+      data.reduce((sum, d) => sum + parseFloat(d.bmi), 0) / data.length
     ).toFixed(1);
     const avgSystolic = Math.round(
-      data.reduce((sum: any, d: any) => sum + d.systolicBP, 0) / data.length
+      data.reduce((sum, d) => sum + d.systolicBP, 0) / data.length
     );
     const avgDiastolic = Math.round(
-      data.reduce((sum: any, d: any) => sum + d.diastolicBP, 0) / data.length
+      data.reduce((sum, d) => sum + d.diastolicBP, 0) / data.length
     );
 
     return {
@@ -287,13 +319,37 @@ export const StatisticsPanel = ({ data }: any) => {
   );
 };
 
+interface Workspace {
+  id: string;
+  name: string;
+  filters: {
+    ageRange?: string;
+    gender?: string;
+    startYear?: string;
+    endYear?: string;
+    condition?: string;
+    conditionCodeType?: string;
+    treatment?: string;
+    treatmentCodeType?: string;
+  };
+  createdAt: string;
+}
+
+interface WorkspaceListModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  workspaces: Workspace[];
+  onSelect: (workspace: Workspace) => void;
+  onDelete: (id: string) => void;
+}
+
 export const WorkspaceListModal = ({
   isOpen,
   onClose,
   workspaces,
   onSelect,
   onDelete
-}: any) => {
+}: WorkspaceListModalProps) => {
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -305,7 +361,7 @@ export const WorkspaceListModal = ({
               No saved workspaces
             </p>
           ) : (
-            workspaces.map((ws: any) => (
+            workspaces.map((ws: Workspace) => (
               <div
                 key={ws.id}
                 className="flex items-center justify-between p-3 border rounded hover:bg-gray-50"
@@ -352,10 +408,15 @@ export const WorkspaceListModal = ({
   );
 };
 
+interface WorkspaceLandingProps {
+  onViewWorkspaces: () => void;
+  onCreateWorkspace: () => void;
+}
+
 export const WorkspaceLanding = ({
   onViewWorkspaces,
   onCreateWorkspace
-}: any) => (
+}: WorkspaceLandingProps) => (
   <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
     <div className="max-w-2xl w-full bg-white rounded-2xl shadow-lg p-8 text-center">
       <div className="mb-6">
@@ -425,12 +486,31 @@ export const WorkspaceLanding = ({
   </div>
 );
 
+interface CreateWorkspaceFormProps {
+  formData: {
+    workspaceName: string;
+    ageRanges: string;
+    gender: string;
+    startYear: string;
+    endYear: string;
+    namedCondition: string;
+    conditionCodeType: string;
+    conditionCodes: string;
+    namedTreatment: string;
+    treatmentCodeType: string;
+    treatmentCodes: string;
+  };
+  handleInputChange: (field: string, value: string) => void;
+  handleBackToLanding: () => void;
+  handleSubmit: () => void;
+}
+
 export const CreateWorkspaceForm = ({
   formData,
   handleInputChange,
   handleBackToLanding,
   handleSubmit
-}: any) => (
+}: CreateWorkspaceFormProps) => (
   <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
     <div className="max-w-4xl w-full bg-white rounded-2xl shadow-lg p-8">
       <div className="text-center mb-8">
@@ -629,6 +709,24 @@ export const CreateWorkspaceForm = ({
   </div>
 );
 
+interface DataGridViewProps {
+  activeWorkspace: Workspace;
+  filteredData: DataRow[];
+  showStats: boolean;
+  setShowStats: (show: boolean) => void;
+  setShowDataSourceModal: (show: boolean) => void;
+  handleBackToLanding: () => void;
+  handleAddRow: () => void;
+  handleDeleteRows: () => void;
+  handleSaveWorkspace: () => void;
+  handleExportExcel: () => void;
+  handleExportCSV: () => void;
+  onSelectionChanged: () => void;
+  gridRef: React.RefObject<AgGridReact<DataRow> | null>;
+  columnDefs: (ColDef<DataRow> | ColGroupDef<DataRow>)[];
+  defaultColDef: ColDef<DataRow>;
+}
+
 export const DataGridView = ({
   activeWorkspace,
   filteredData,
@@ -645,7 +743,7 @@ export const DataGridView = ({
   gridRef,
   columnDefs,
   defaultColDef
-}: any) => (
+}: DataGridViewProps) => (
   <div className="h-screen w-full bg-gray-50 flex flex-col">
     <div className="p-4 border-b bg-white shadow-sm">
       <div className="flex items-center justify-between mb-4">
