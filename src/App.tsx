@@ -1,133 +1,52 @@
-import { useState } from 'react';
-import { AgGridReact } from 'ag-grid-react';
-import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community';
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback
+} from 'react';
+import {
+  ModuleRegistry,
+  AllCommunityModule
+} from 'ag-grid-community';
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-alpine.css';
+
+import {
+  DataSourceModal,
+  StatisticsPanel,
+  WorkspaceListModal,
+  WorkspaceLanding,
+  CreateWorkspaceForm,
+  DataGridView
+} from './components/ui/UI';
+import { generateMockData } from './utils/api';
+import type { DataRow } from './utils/api';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
-const fetchFHIR = () => {
-  return [
-    { mrn: 'MRN001', diagnosis: 'Hypertension', date: '2024-03-15' },
-    { mrn: 'MRN002', diagnosis: 'Diabetes Type 2', date: '2024-03-14' },
-    { mrn: 'MRN003', diagnosis: 'Asthma', date: '2024-03-13' },
-    { mrn: 'MRN004', diagnosis: 'Chronic Kidney Disease', date: '2024-03-12' },
-    { mrn: 'MRN005', diagnosis: 'Coronary Artery Disease', date: '2024-03-11' },
-  ];
-};
-
-const WorkspaceLanding = ({ onCreateWorkspace, onViewWorkspaces }) => {
-  return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="max-w-2xl w-full bg-white rounded-2xl shadow-lg p-8 text-center">
-        <div className="mb-6">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-xl">
-            <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-            </svg>
-          </div>
-        </div>
-
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">
-          Workspaces
-        </h1>
-
-        <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-          Create, organize, and run queries across datasets with ease.
-        </p>
-
-        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-          <button
-            onClick={onViewWorkspaces}
-            className="px-8 py-3 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-colors duration-200"
-          >
-            View Workspaces
-          </button>
-          <button
-            onClick={onCreateWorkspace}
-            className="px-8 py-3 bg-teal-500 text-white font-semibold rounded-lg hover:bg-teal-600 transition-colors duration-200"
-          >
-            Create Workspace
-          </button>
-        </div>
-
-        <p className="text-gray-700 mb-8 leading-relaxed">
-          A workspace lets you build, preview, and query custom data tables with 
-          intuitive tools tailored for research and analysis.
-        </p>
-
-        <div className="text-left mb-8">
-          <h3 className="text-lg font-semibold text-gray-900 mb-6 text-center">How it works:</h3>
-          <ol className="space-y-3 text-gray-700">
-            <li className="flex items-start">
-              <span className="flex-shrink-0 w-6 h-6 bg-blue-500 text-white text-sm font-semibold rounded-full flex items-center justify-center mr-3 mt-0.5">1</span>
-              <span>Create a new workspace</span>
-            </li>
-            <li className="flex items-start">
-              <span className="flex-shrink-0 w-6 h-6 bg-blue-500 text-white text-sm font-semibold rounded-full flex items-center justify-center mr-3 mt-0.5">2</span>
-              <span>Pull and connect data</span>
-            </li>
-            <li className="flex items-start">
-              <span className="flex-shrink-0 w-6 h-6 bg-blue-500 text-white text-sm font-semibold rounded-full flex items-center justify-center mr-3 mt-0.5">3</span>
-              <span>Select your desired fields</span>
-            </li>
-            <li className="flex items-start">
-              <span className="flex-shrink-0 w-6 h-6 bg-blue-500 text-white text-sm font-semibold rounded-full flex items-center justify-center mr-3 mt-0.5">4</span>
-              <span>Run and visualize results</span>
-            </li>
-          </ol>
-        </div>
-
-        <button className="text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200 flex items-center justify-center mx-auto">
-          Learn more about workspaces
-          <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
-      </div>
-    </div>
-  );
-};
-
-const DataGridView = ({ onBack }) => {
-  const [rowData] = useState(() => fetchFHIR());
-  
-  const columnDefs = [
-    { field: 'mrn', headerName: 'MRN', editable: true },
-    { field: 'diagnosis', editable: true },
-    { field: 'date', headerName: 'Encounter Date', type: 'dateColumn' }
-  ];
-
-  const defaultColDef = {
-    flex: 1,
-    sortable: true,
-    filter: true,
-    resizable: true,
+const App: React.FC = () => {
+  type Workspace = {
+    id: string;
+    name: string;
+    filters: any;
+    createdAt: string;
   };
 
-  return (
-    <div className="h-screen w-full bg-white">
-      <div className="p-4 border-b bg-gray-50">
-        <button
-          onClick={onBack}
-          className="mb-4 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors duration-200"
-        >
-          ← Back to Workspaces
-        </button>
-        <h2 className="text-2xl font-bold text-gray-900">Healthcare Data Workspace</h2>
-      </div>
-      <div className="ag-theme-quartz h-full">
-        <AgGridReact 
-          rowData={rowData} 
-          columnDefs={columnDefs} 
-          defaultColDef={defaultColDef}
-          enableRangeSelection
-          rowSelection="multiple"
-        />
-      </div>
-    </div>
-  );
-};
+  const [currentView, setCurrentView] = useState<
+    'landing' | 'create' | 'datagrid'
+  >('landing');
+  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
+  const [activeWorkspace, setActiveWorkspace] =
+    useState<Workspace | null>(null);
+  const [showDataSourceModal, setShowDataSourceModal] =
+    useState(false);
+  const [showWorkspaceListModal, setShowWorkspaceListModal] =
+    useState(false);
+  const [rowData, setRowData] = useState<DataRow[]>([]);
+  const [filteredData, setFilteredData] = useState<DataRow[]>([]);
+  const [selectedRows, setSelectedRows] = useState<DataRow[]>([]);
+  const [showStats, setShowStats] = useState(true);
 
-const CreateWorkspaceForm = ({ onBack, onEnter }) => {
   const [formData, setFormData] = useState({
     workspaceName: '',
     ageRanges: '',
@@ -142,232 +61,322 @@ const CreateWorkspaceForm = ({ onBack, onEnter }) => {
     treatmentCodes: ''
   });
 
-  const handleInputChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const gridRef = useRef<any>(null);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('researchWorkspaces');
+    if (saved) {
+      setWorkspaces(JSON.parse(saved));
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(
+      'researchWorkspaces',
+      JSON.stringify(workspaces)
+    );
+  }, [workspaces]);
+
+  useEffect(() => {
+    if (activeWorkspace && rowData.length > 0) {
+      let filtered = [...rowData];
+      const f = activeWorkspace.filters;
+
+      if (f.ageRange && typeof f.ageRange === 'string') {
+        const parts = f.ageRange.split('-');
+        if (parts.length === 2) {
+          const min = parseInt(parts[0], 10);
+          const max = parseInt(parts[1], 10);
+          if (!isNaN(min) && !isNaN(max)) {
+            filtered = filtered.filter(
+              (r) => r.age >= min && r.age <= max
+            );
+          }
+        }
+      }
+      if (f.gender && f.gender !== 'All') {
+        filtered = filtered.filter((r) => r.gender === f.gender);
+      }
+      if (f.condition) {
+        filtered = filtered.filter((r) =>
+          r.diagnosis
+            .toLowerCase()
+            .includes(f.condition.toLowerCase())
+        );
+      }
+      if (f.startYear && f.endYear) {
+        const start = new Date(parseInt(f.startYear, 10), 0, 1);
+        const end = new Date(parseInt(f.endYear, 10), 11, 31);
+        if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+          filtered = filtered.filter((r) => {
+            const d = new Date(r.encounterDate);
+            return d >= start && d <= end;
+          });
+        }
+      }
+
+      setFilteredData(filtered);
+    } else if (rowData.length > 0) {
+      setFilteredData([...rowData]);
+    } else {
+      setFilteredData([]);
+    }
+  }, [activeWorkspace, rowData]);
+
+  const columnDefs = [
+    {
+      field: 'checkbox',
+      headerName: '',
+      checkboxSelection: true,
+      headerCheckboxSelection: true,
+      width: 50,
+      pinned: 'left'
+    },
+    { field: 'mrn', headerName: 'MRN', editable: true },
+    {
+      field: 'age',
+      headerName: 'Age',
+      type: 'numericColumn',
+      editable: true
+    },
+    { field: 'gender', headerName: 'Gender', editable: true },
+    { field: 'diagnosis', headerName: 'Diagnosis', editable: true },
+    { field: 'treatment', headerName: 'Treatment', editable: true },
+    {
+      field: 'encounterDate',
+      headerName: 'Encounter Date',
+      editable: true,
+      filter: 'agDateColumnFilter',
+      filterParams: {
+        comparator: (
+          filterLocalDateAtMidnight: Date,
+          cellValue: string
+        ) => {
+          if (!cellValue) return -1;
+          const [y, m, d] = cellValue.split('-').map(Number);
+          const cellDate = new Date(y, m - 1, d);
+          if (
+            filterLocalDateAtMidnight.getTime() ===
+            cellDate.getTime()
+          )
+            return 0;
+          return cellDate < filterLocalDateAtMidnight
+            ? -1
+            : 1;
+        }
+      }
+    },
+    {
+      field: 'labValue',
+      headerName: 'Lab Value',
+      type: 'numericColumn',
+      editable: true
+    },
+    {
+      field: 'systolicBP',
+      headerName: 'Systolic BP',
+      type: 'numericColumn',
+      editable: true
+    },
+    {
+      field: 'diastolicBP',
+      headerName: 'Diastolic BP',
+      type: 'numericColumn',
+      editable: true
+    },
+    {
+      field: 'bmi',
+      headerName: 'BMI',
+      type: 'numericColumn',
+      editable: true
+    }
+  ];
+
+  const defaultColDef = {
+    flex: 1,
+    sortable: true,
+    filter: true,
+    resizable: true,
+    minWidth: 100
   };
 
-  const handleSubmit = () => {
-    onEnter(formData);
+  const handleInputChange = (field: string, value: any) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="max-w-4xl w-full bg-white rounded-2xl shadow-lg p-8">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-xl mb-4">
-            <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-            </svg>
-          </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Create Workspace</h1>
-          <p className="text-lg text-gray-600 leading-relaxed">
-            Build your dataset by selecting relevant fields and filters below to personalize it for your study.
-          </p>
-        </div>
-
-        <form className="space-y-6">
-          <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-2">Name Workspace</label>
-            <input
-              type="text"
-              placeholder="e.g. Pediatric Diabetes Study"
-              value={formData.workspaceName}
-              onChange={(e) => handleInputChange('workspaceName', e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900">Build Your Database</h3>
-            <div className="text-gray-700 space-y-2">
-              <p>Building your Database means creating all relevant information allowed by your institution. Retrieve and select data from various sources to construct relevant and personalized tables.</p>
-              <p>Use the filters below to pull the most relevant data for your workspace. Build your dataset by selecting relevant fields and filters below to personalize it for your study.</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-semibold text-gray-900 mb-2">Age Ranges</label>
-              <input
-                type="text"
-                placeholder="e.g. 18-65"
-                value={formData.ageRanges}
-                onChange={(e) => handleInputChange('ageRanges', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-900 mb-2">Gender</label>
-              <select
-                value={formData.gender}
-                onChange={(e) => handleInputChange('gender', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-              >
-                <option value="">Select gender</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="all">All</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-semibold text-gray-900 mb-2">Start Year</label>
-              <input
-                type="text"
-                placeholder="e.g. 2015"
-                value={formData.startYear}
-                onChange={(e) => handleInputChange('startYear', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-900 mb-2">End Year</label>
-              <input
-                type="text"
-                placeholder="e.g. 2022"
-                value={formData.endYear}
-                onChange={(e) => handleInputChange('endYear', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <label className="block text-sm font-semibold text-gray-900 mb-2">Named Condition</label>
-              <input
-                type="text"
-                placeholder="e.g. Diabetes"
-                value={formData.namedCondition}
-                onChange={(e) => handleInputChange('namedCondition', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-900 mb-2">Code Type</label>
-              <select
-                value={formData.conditionCodeType}
-                onChange={(e) => handleInputChange('conditionCodeType', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-              >
-                <option value="">Select code type</option>
-                <option value="icd10">ICD-10</option>
-                <option value="icd9">ICD-9</option>
-                <option value="snomed">SNOMED</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-900 mb-2">Codes</label>
-              <input
-                type="text"
-                placeholder="e.g. E10, E11"
-                value={formData.conditionCodes}
-                onChange={(e) => handleInputChange('conditionCodes', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <label className="block text-sm font-semibold text-gray-900 mb-2">Named Treatment</label>
-              <input
-                type="text"
-                placeholder="e.g. Insulin"
-                value={formData.namedTreatment}
-                onChange={(e) => handleInputChange('namedTreatment', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-900 mb-2">Code Type</label>
-              <select
-                value={formData.treatmentCodeType}
-                onChange={(e) => handleInputChange('treatmentCodeType', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-              >
-                <option value="">Select code type</option>
-                <option value="ndc">NDC</option>
-                <option value="rxnorm">RxNorm</option>
-                <option value="hcpcs">HCPCS</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-900 mb-2">Codes</label>
-              <input
-                type="text"
-                placeholder="e.g. A10AB01"
-                value={formData.treatmentCodes}
-                onChange={(e) => handleInputChange('treatmentCodes', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
-            <button
-              type="button"
-              onClick={onBack}
-              className="px-8 py-3 bg-gray-500 text-white font-semibold rounded-lg hover:bg-gray-600 transition-colors duration-200"
-            >
-              Back
-            </button>
-            <button
-              type="button"
-              onClick={handleSubmit}
-              className="px-8 py-3 bg-teal-500 text-white font-semibold rounded-lg hover:bg-teal-600 transition-colors duration-200"
-            >
-              Enter
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-
-const App = () => {
-  const [currentView, setCurrentView] = useState('landing');
-
-  const handleCreateWorkspace = () => {
-    setCurrentView('create');
-  };
-
-  const handleViewWorkspaces = () => {
-    setCurrentView('datagrid');
-  };
-
+  const handleCreateWorkspace = () => setCurrentView('create');
+  const handleViewWorkspaces = () =>
+    setShowWorkspaceListModal(true);
   const handleBackToLanding = () => {
     setCurrentView('landing');
+    setActiveWorkspace(null);
+    setRowData([]);
+    setFilteredData([]);
   };
 
-  const handleEnterWorkspace = (formData) => {
-    console.log('Workspace data:', formData);
+  const handleEnterWorkspace = () => {
+    const newWs: Workspace = {
+      id: Date.now().toString(),
+      name: formData.workspaceName || 'Untitled Workspace',
+      filters: {
+        ageRange: formData.ageRanges,
+        gender: formData.gender,
+        startYear: formData.startYear,
+        endYear: formData.endYear,
+        condition: formData.namedCondition,
+        conditionCodeType: formData.conditionCodeType,
+        treatment: formData.namedTreatment,
+        treatmentCodeType: formData.treatmentCodeType
+      },
+      createdAt: new Date().toISOString()
+    };
+    setWorkspaces((prev) => [...prev, newWs]);
+    setActiveWorkspace(newWs);
     setCurrentView('datagrid');
+    setRowData(generateMockData(100));
   };
+
+  const handleConnectDataSource = (
+    source: string,
+    details: any
+  ) => {
+    setRowData((prev) => [...prev, ...generateMockData(50)]);
+  };
+
+  const handleLoadWorkspace = (ws: Workspace) => {
+    setActiveWorkspace(ws);
+    setCurrentView('datagrid');
+    setShowWorkspaceListModal(false);
+    setRowData(generateMockData(100));
+  };
+
+  const handleDeleteWorkspace = (id: string) => {
+    setWorkspaces((prev) => prev.filter((w) => w.id !== id));
+    if (activeWorkspace?.id === id) {
+      handleBackToLanding();
+    }
+  };
+
+  const handleSaveWorkspace = () => {
+    if (activeWorkspace) {
+      setWorkspaces((prev) =>
+        prev.map((w) =>
+          w.id === activeWorkspace.id ? activeWorkspace : w
+        )
+      );
+      alert('Workspace saved successfully!');
+    }
+  };
+
+  const handleAddRow = () => {
+    const newRow: any = {
+      id: `P${String(rowData.length + 1).padStart(3, '0')}`,
+      mrn: `MRN${String(rowData.length + 1).padStart(3, '0')}`,
+      age: 30,
+      gender: 'Male',
+      diagnosis: '',
+      treatment: '',
+      encounterDate: new Date()
+        .toISOString()
+        .split('T')[0],
+      labValue: 0,
+      systolicBP: 120,
+      diastolicBP: 80,
+      bmi: '25.0'
+    };
+    setRowData((prev) => [...prev, newRow]);
+  };
+
+  const handleDeleteRows = () => {
+    if (selectedRows.length > 0) {
+      const ids = selectedRows.map((r) => r.id);
+      setRowData((prev) =>
+        prev.filter((r) => !ids.includes(r.id))
+      );
+      setSelectedRows([]);
+    }
+  };
+
+  const handleExportExcel = () => {
+    if (gridRef.current?.api) {
+      gridRef.current.api.exportDataAsExcel({
+        fileName: `${activeWorkspace?.name || 'data'}-${new Date()
+          .toISOString()
+          .split('T')[0]}.xlsx`
+      });
+    }
+  };
+  const handleExportCSV = () => {
+    if (gridRef.current?.api) {
+      gridRef.current.api.exportDataAsCsv({
+        fileName: `${activeWorkspace?.name || 'data'}-${new Date()
+          .toISOString()
+          .split('T')[0]}.csv`
+      });
+    }
+  };
+
+  const onSelectionChanged = useCallback(() => {
+    if (gridRef.current?.api) {
+      const sel = gridRef.current.api.getSelectedNodes();
+      setSelectedRows(sel.map((n: any) => n.data));
+    }
+  }, []);
 
   if (currentView === 'landing') {
     return (
-      <WorkspaceLanding 
-        onCreateWorkspace={handleCreateWorkspace}
+      <WorkspaceLanding
         onViewWorkspaces={handleViewWorkspaces}
+        onCreateWorkspace={handleCreateWorkspace}
       />
     );
   }
-
   if (currentView === 'create') {
     return (
-      <CreateWorkspaceForm 
-        onBack={handleBackToLanding}
-        onEnter={handleEnterWorkspace}
+      <CreateWorkspaceForm
+        formData={formData}
+        handleInputChange={handleInputChange}
+        handleBackToLanding={handleBackToLanding}
+        handleSubmit={handleEnterWorkspace}
+      />
+    );
+  }
+  if (currentView === 'datagrid' && activeWorkspace) {
+    return (
+      <DataGridView
+        activeWorkspace={activeWorkspace}
+        filteredData={filteredData}
+        showStats={showStats}
+        setShowStats={setShowStats}
+        setShowDataSourceModal={setShowDataSourceModal}
+        handleBackToLanding={handleBackToLanding}
+        handleAddRow={handleAddRow}
+        handleDeleteRows={handleDeleteRows}
+        handleSaveWorkspace={handleSaveWorkspace}
+        handleExportExcel={handleExportExcel}
+        handleExportCSV={handleExportCSV}
+        onSelectionChanged={onSelectionChanged}
+        gridRef={gridRef}
+        columnDefs={columnDefs}
+        defaultColDef={defaultColDef}
       />
     );
   }
 
   return (
-    <DataGridView onBack={handleBackToLanding} />
+    <>
+      <WorkspaceListModal
+        isOpen={showWorkspaceListModal}
+        onClose={() => setShowWorkspaceListModal(false)}
+        workspaces={workspaces}
+        onSelect={handleLoadWorkspace}
+        onDelete={handleDeleteWorkspace}
+      />
+      <WorkspaceLanding
+        onViewWorkspaces={handleViewWorkspaces}
+        onCreateWorkspace={handleCreateWorkspace}
+      />
+    </>
   );
 };
 
